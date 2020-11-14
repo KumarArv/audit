@@ -27,30 +27,47 @@ base.geometry('150x40')
 def getCourseSet(fileK, time):
 
     soup = BeautifulSoup(fileK, "lxml")
-    trList = soup.find_all('tr', {'class': "takenCourse"})
+
 
     setOfCoursesIP = set()
     setOfCoursesFuture = set()
     setOfCoursesTaken = set()
+    setOfCoursesRemaining = set()
 
     currentTerm = "AU20"
 
-    for setTr in trList:
-        list1 = setTr.findChildren()
-        if (termComparator(currentTerm, list1[0].text.strip()) == "="):
-            addToSet(setOfCoursesIP, list1[1].text.strip())
-        elif (termComparator(currentTerm, list1[0].text.strip()) == "<"):
-            addToSet(setOfCoursesFuture, list1[1].text.strip())
+    if(time != "REMAINING"):
+        trList = soup.find_all('tr', {'class': "takenCourse"})
+        for setTr in trList:
+            list1 = setTr.findChildren()
+            if (termComparator(currentTerm, list1[0].text.strip()) == "="):
+                addToSet(setOfCoursesIP, list1[1].text.strip())
+            elif (termComparator(currentTerm, list1[0].text.strip()) == "<"):
+                addToSet(setOfCoursesFuture, list1[1].text.strip())
+            else:
+                addToSet(setOfCoursesTaken, list1[1].text.strip())
+        if(time == "TAKEN"):
+            return setOfCoursesTaken
+        elif(time == "IP"):
+            return setOfCoursesIP
+        elif(time == "FUTURE"):
+            return setOfCoursesFuture
         else:
-            addToSet(setOfCoursesTaken, list1[1].text.strip())
-    if(time == "TAKEN"):
-        return setOfCoursesTaken
-    elif(time == "IP"):
-        return setOfCoursesIP
-    elif(time == "FUTURE"):
-        return setOfCoursesFuture
+            raise Exception("This is an invalid set of Class Selection: Choose from TAKEN, IP or FUTURE")
     else:
-        raise Exception("This is an invalid set of Class Selection: Choose from TAKEN, IP or FUTURE")
+        trList = soup.find_all('td',{'class':"fromcourselist"})
+        for setTr in trList:
+            list1 = setTr.findChildren()
+            for x in list1:
+                #print(x['class'][0])
+                if(x['class'][0]!="number"):
+                    string = x['department'] + " " + x['number']
+                    addToSet(setOfCoursesRemaining,string)
+        return setOfCoursesRemaining
+
+
+
+
 
 #term 1 should generally be current term
 #returns > if term1 > term2
@@ -83,10 +100,10 @@ def addToSet(setA,course):
 
 # MAIN Method below: Above are methods
 
-with filedialog.askopenfile(initialdir="/") as input:
-    fileK = open(input.name)
-#fileK = open("DegAudit.html")
-l = getCourseSet(fileK,"FUTURE")
+#with filedialog.askopenfile(initialdir="/") as input:
+#    fileK = open(input.name)
+fileK = open("DegAudit.html")
+l = getCourseSet(fileK,"REMAINING")
 
 for k in l:
     print(k)
